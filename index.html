@@ -1,0 +1,874 @@
+<!doctype html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f7f8f5">
+    <meta name="description" content="Mochi Study — trợ lý học thuật giúp tóm tắt tài liệu, tạo quiz và quản lý thời gian học.">
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg">
+    <title>Mochi Study — Trợ lý học thuật</title>
+    <style>
+        :root {
+            --page: #f7f8f5;
+            --paper: #fff;
+            --paper-soft: #f4f6f1;
+            --ink: #293730;
+            --muted: #829087;
+            --line: #e8ede7;
+            --green: #668f78;
+            --green-dark: #4e765f;
+            --green-pale: #edf4ee;
+            --peach: #fff0e7;
+            --peach-ink: #bc7956;
+            --lilac: #f2effa;
+            --shadow: 0 12px 38px rgba(48, 69, 54, .055);
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0; min-width: 320px; min-height: 100vh; color: var(--ink);
+            background: radial-gradient(ellipse at 82% 0, #edf3e866, transparent 31rem), var(--page);
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+        button, input, textarea, select { font: inherit; }
+        button { color: inherit; }
+        button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible {
+            outline: 3px solid #668f7840; outline-offset: 2px;
+        }
+        .shell { width: min(1190px, calc(100% - 44px)); margin: 0 auto; padding: 23px 0 32px; }
+        .topbar { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-bottom: 30px; }
+        .brand { display: flex; align-items: center; gap: 11px; font-size: 18px; font-weight: 760; letter-spacing: -.6px; }
+        .brand-mark { display: grid; width: 40px; height: 40px; place-items: center; overflow: hidden; border-radius: 14px; background: #e8f0e7; }
+        .brand-mark img { display: block; width: 100%; height: 100%; }
+        .brand small { display: block; margin-top: 2px; color: var(--muted); font-size: 9px; font-weight: 600; letter-spacing: 1.1px; }
+        .top-right { display: flex; align-items: center; gap: 11px; }
+        .date-label { color: var(--muted); font-size: 12px; }
+        .ai-status { display: inline-flex; align-items: center; gap: 7px; padding: 8px 11px; border: 1px solid var(--line); border-radius: 30px; background: #fff; color: #78867d; font-size: 11px; white-space: nowrap; }
+        .status-dot { width: 7px; height: 7px; border-radius: 50%; background: #e5aa66; }
+        .ai-status.online .status-dot { background: #6da67b; box-shadow: 0 0 0 3px #6da67b20; }
+        .avatar { display: grid; width: 37px; height: 37px; place-items: center; border: 2px solid #fff; border-radius: 50%; background: #f7e5d7; font-size: 18px; }
+        .layout { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 25px; align-items: start; }
+        .sidebar { position: sticky; top: 20px; padding: 11px; border: 1px solid var(--line); border-radius: 20px; background: #ffffffc9; box-shadow: var(--shadow); }
+        .nav-label { padding: 13px 10px 8px; color: #a0aaa3; font-size: 9px; font-weight: 750; letter-spacing: 1.2px; text-transform: uppercase; }
+        .nav-button { display: flex; width: 100%; align-items: center; gap: 11px; padding: 11px 10px; border: 0; border-radius: 11px; background: transparent; color: #78857d; cursor: pointer; text-align: left; font-size: 12px; font-weight: 580; transition: background .16s, color .16s; }
+        .nav-button:hover { background: #f4f6f2; color: var(--ink); }
+        .nav-button.active { background: var(--green-pale); color: var(--green-dark); font-weight: 700; }
+        .nav-icon { display: grid; width: 25px; height: 25px; place-items: center; border-radius: 8px; background: #fff; font-size: 14px; }
+        .sidebar-tip { margin: 17px 3px 2px; padding: 13px 12px; border-radius: 13px; background: #fff5ed; color: #9c775f; font-size: 10px; line-height: 1.6; }
+        .sidebar-tip strong { display: block; margin-bottom: 3px; color: #8d674e; font-size: 11px; }
+        main { min-width: 0; }
+        .welcome { margin: 0 0 20px; }
+        .eyebrow { margin: 0 0 8px; color: var(--green); font-size: 10px; font-weight: 750; letter-spacing: 1.5px; text-transform: uppercase; }
+        h1 { margin: 0; font-size: clamp(24px, 3vw, 32px); font-weight: 700; letter-spacing: -1.05px; line-height: 1.25; }
+        .welcome p:last-child { margin: 8px 0 0; color: var(--muted); font-size: 13px; }
+        .page { display: none; }
+        .page.active { display: block; animation: enter .2s ease-out; }
+        @keyframes enter { from { opacity: .4; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+        .card { border: 1px solid rgba(230, 235, 228, .95); border-radius: 20px; background: var(--paper); box-shadow: var(--shadow); }
+        .content-card { padding: 22px; }
+        .section-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; margin-bottom: 19px; }
+        .head-group { display: flex; align-items: center; gap: 11px; }
+        .icon-box { display: grid; width: 39px; height: 39px; flex: 0 0 39px; place-items: center; border-radius: 13px; background: var(--green-pale); font-size: 18px; }
+        .icon-box.peach { background: var(--peach); }
+        .icon-box.lilac { background: var(--lilac); }
+        h2 { margin: 0; font-size: 15px; font-weight: 720; letter-spacing: -.2px; }
+        .subheading { margin: 4px 0 0; color: var(--muted); font-size: 11px; line-height: 1.5; }
+        .privacy { padding: 7px 9px; border-radius: 30px; background: #f5f7f3; color: #79867e; font-size: 10px; white-space: nowrap; }
+        .field-label { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0 0 8px; color: #536159; font-size: 11px; font-weight: 680; }
+        .field-hint { color: #9ba69f; font-size: 10px; font-weight: 450; }
+        .text-area { display: block; width: 100%; min-height: 188px; resize: vertical; padding: 13px 14px; border: 1px solid var(--line); border-radius: 13px; background: #fdfdfb; color: var(--ink); font-size: 12px; line-height: 1.7; transition: border-color .2s, box-shadow .2s; }
+        .text-area::placeholder { color: #a4aea7; }
+        .text-area:focus { border-color: #9db8a4; outline: 0; box-shadow: 0 0 0 4px #668f7818; }
+        .upload-row { display: flex; align-items: center; gap: 10px; margin: 0 0 15px; }
+        .upload-box { display: flex; min-height: 46px; flex: 1; align-items: center; gap: 9px; padding: 8px 11px; border: 1px dashed #ced9ce; border-radius: 12px; background: #fbfcfa; color: #718078; font-size: 10px; transition: border-color .2s, background .2s; }
+        .upload-box.dragging { border-color: var(--green); background: var(--green-pale); }
+        .upload-box strong { display: block; margin-bottom: 2px; color: #56665c; font-size: 10px; }
+        .file-icon { display: grid; width: 28px; height: 28px; flex: 0 0 28px; place-items: center; border-radius: 9px; background: var(--green-pale); font-size: 13px; }
+        .upload-button { display: inline-flex; align-items: center; justify-content: center; min-height: 32px; flex: 0 0 auto; padding: 0 10px; border: 1px solid var(--line); border-radius: 9px; background: #fff; color: #64746a; cursor: pointer; font-size: 10px; font-weight: 650; }
+        .upload-button:hover { background: #f6f8f4; }
+        .file-input { display: none; }
+        .privacy-note { margin: -5px 0 15px; color: #9aa49d; font-size: 10px; line-height: 1.5; }
+        .form-row { display: flex; align-items: end; justify-content: space-between; gap: 12px; margin-top: 13px; }
+        .field { display: flex; flex-direction: column; gap: 6px; color: #728078; font-size: 10px; }
+        .select, .input { min-height: 35px; padding: 0 10px; border: 1px solid var(--line); border-radius: 9px; background: #fff; color: var(--ink); font-size: 11px; }
+        .select { min-width: 128px; }
+        .input { width: 100%; }
+        .button { display: inline-flex; min-height: 39px; align-items: center; justify-content: center; gap: 7px; padding: 0 15px; border: 0; border-radius: 10px; cursor: pointer; font-size: 11px; font-weight: 700; transition: transform .15s, background .15s, opacity .15s; }
+        .button:hover { transform: translateY(-1px); }
+        .button:active { transform: translateY(0); }
+        .button:disabled { cursor: wait; opacity: .65; transform: none; }
+        .button-primary { background: var(--green); color: white; box-shadow: 0 4px 11px #668f7825; }
+        .button-primary:hover { background: var(--green-dark); }
+        .button-light { border: 1px solid var(--line); background: #fff; color: #64746a; }
+        .button-light:hover { background: #f5f7f3; }
+        .notice { display: none; margin-top: 14px; padding: 10px 12px; border-radius: 10px; background: #fff6e9; color: #9a7148; font-size: 11px; line-height: 1.55; }
+        .notice.visible { display: block; }
+        .notice.error { background: #fff0ed; color: #a35b50; }
+        .notice.success { background: #eff7ee; color: #547a5d; }
+        .result-card { display: none; margin-top: 17px; padding: 16px; border: 1px solid #e7eee6; border-radius: 14px; background: #f9fbf8; }
+        .result-card.visible { display: block; animation: enter .2s ease-out; }
+        .result-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+        .result-title { margin: 0; color: var(--green-dark); font-size: 12px; font-weight: 750; }
+        .result-body { color: #4e5e53; font-size: 12px; line-height: 1.8; white-space: pre-wrap; }
+        .result-body p { margin: 0 0 9px; }
+        .result-body ul { margin: 6px 0 0; padding-left: 20px; }
+        .result-body li { margin: 4px 0; }
+        .result-actions { display: flex; flex-wrap: wrap; gap: 7px; }
+        .small-button { min-height: 29px; padding: 0 9px; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: #718078; cursor: pointer; font-size: 10px; }
+        .small-button:hover { background: #f3f6f1; }
+        .mode-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 15px; }
+        .mode-option { position: relative; }
+        .mode-option input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+        .mode-option span { display: inline-flex; min-height: 34px; align-items: center; gap: 6px; padding: 0 11px; border: 1px solid var(--line); border-radius: 9px; background: #fff; color: #78857d; cursor: pointer; font-size: 10px; }
+        .mode-option input:checked + span { border-color: #cadaca; background: var(--green-pale); color: var(--green-dark); font-weight: 700; }
+        .mode-option input:focus-visible + span { outline: 3px solid #668f7840; outline-offset: 2px; }
+        .quiz-summary { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px; color: #77837c; font-size: 11px; }
+        .quiz-score { color: var(--green-dark); font-weight: 750; }
+        .question-card { margin: 11px 0; padding: 14px; border: 1px solid var(--line); border-radius: 12px; background: #fff; }
+        .question-title { margin: 0 0 11px; color: #3e4d44; font-size: 12px; font-weight: 700; line-height: 1.6; }
+        .answer-option { display: flex; width: 100%; align-items: flex-start; gap: 9px; margin: 5px 0; padding: 9px 10px; border: 1px solid #edf0eb; border-radius: 9px; background: #fdfefc; color: #637168; cursor: pointer; text-align: left; font-size: 11px; line-height: 1.55; }
+        .answer-option:hover:not(:disabled) { border-color: #cbd9cc; background: #f6f9f5; }
+        .answer-option:disabled { cursor: default; }
+        .answer-option.correct { border-color: #b7d5b9; background: #eff8ef; color: #47774e; }
+        .answer-option.incorrect { border-color: #ecc5bb; background: #fff2ef; color: #a15d50; }
+        .answer-letter { display: grid; width: 19px; height: 19px; flex: 0 0 19px; place-items: center; border-radius: 6px; background: #f0f3ef; color: #758279; font-size: 9px; font-weight: 750; }
+        .answer-feedback { display: none; margin: 9px 0 0; padding: 9px 10px; border-radius: 8px; background: #f3f7f2; color: #64776a; font-size: 10px; line-height: 1.55; }
+        .answer-feedback.visible { display: block; }
+        .timer-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(260px, .75fr); gap: 16px; }
+        .timer-panel { display: flex; min-height: 340px; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+        .timer-ring { --progress: 100%; display: grid; width: 204px; aspect-ratio: 1; place-items: center; border-radius: 50%; background: conic-gradient(#84a88f var(--progress), #edf1eb var(--progress)); transition: background .35s ease; }
+        .timer-inner { display: flex; width: calc(100% - 12px); height: calc(100% - 12px); flex-direction: column; align-items: center; justify-content: center; border-radius: 50%; background: #fff; }
+        .timer-display { color: #304139; font-size: 48px; font-variant-numeric: tabular-nums; font-weight: 660; letter-spacing: -2px; line-height: 1.15; }
+        .timer-caption { margin-top: 8px; color: var(--muted); font-size: 10px; }
+        .timer-controls { display: flex; align-items: center; justify-content: center; gap: 9px; margin-top: 17px; }
+        .timer-controls .button { min-width: 112px; }
+        .round-button { display: grid; width: 39px; height: 39px; place-items: center; border: 1px solid var(--line); border-radius: 10px; background: #fff; color: #829087; cursor: pointer; font-size: 16px; }
+        .presets { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 5px; margin-top: 17px; }
+        .preset { padding: 7px 8px; border: 0; border-radius: 8px; background: transparent; color: #87938b; cursor: pointer; font-size: 9px; }
+        .preset.active, .preset:hover { background: var(--green-pale); color: var(--green-dark); }
+        .preset.active { font-weight: 750; }
+        .timer-help { display: flex; flex-direction: column; justify-content: center; padding: 20px; background: linear-gradient(145deg, #fff, #f8faf6); }
+        .timer-help h3 { margin: 0 0 8px; font-size: 13px; }
+        .timer-help p { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.7; }
+        .timer-help .notice { display: block; margin-top: 14px; }
+        .event-form { display: grid; grid-template-columns: 1fr 170px auto; align-items: end; gap: 10px; }
+        .event-list { display: grid; gap: 10px; margin-top: 17px; }
+        .event-item { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 13px 14px; border: 1px solid var(--line); border-radius: 12px; background: #fdfefc; }
+        .event-info { min-width: 0; }
+        .event-name { overflow: hidden; margin: 0; color: #45554a; font-size: 12px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+        .event-date { margin: 4px 0 0; color: #929e96; font-size: 10px; }
+        .event-count { flex: 0 0 auto; color: var(--green-dark); font-size: 12px; font-weight: 750; text-align: right; }
+        .event-count small { display: block; margin-top: 3px; color: #98a39b; font-size: 9px; font-weight: 500; }
+        .delete-event { width: 27px; height: 27px; flex: 0 0 27px; border: 0; border-radius: 8px; background: transparent; color: #a7b0aa; cursor: pointer; font-size: 15px; }
+        .delete-event:hover { background: #fff0ed; color: #a35b50; }
+        .empty-state { padding: 24px 12px; border: 1px dashed #dfe6dd; border-radius: 12px; color: #98a39b; font-size: 11px; text-align: center; }
+        .footer { margin-top: 22px; color: #9aa49e; font-size: 10px; text-align: center; }
+        .footer span { color: #d89680; }
+        @media (max-width: 860px) {
+            .shell { width: min(100% - 30px, 680px); padding-top: 17px; }
+            .layout { grid-template-columns: 1fr; gap: 18px; }
+            .sidebar { position: static; display: flex; gap: 4px; overflow-x: auto; padding: 6px; }
+            .nav-label, .sidebar-tip { display: none; }
+            .nav-button { width: auto; flex: 1 0 auto; justify-content: center; gap: 7px; padding: 9px; font-size: 10px; }
+            .nav-icon { width: 21px; height: 21px; font-size: 12px; }
+            .welcome { margin-bottom: 16px; }
+        }
+        @media (max-width: 560px) {
+            .shell { width: calc(100% - 22px); }
+            .topbar { margin-bottom: 19px; }
+            .date-label { display: none; }
+            .ai-status { padding: 7px 8px; font-size: 9px; }
+            .brand { font-size: 16px; }
+            .brand-mark { width: 36px; height: 36px; }
+            .nav-button { flex-direction: column; gap: 4px; padding: 7px 8px; font-size: 9px; }
+            .content-card { padding: 16px 14px; border-radius: 17px; }
+            .section-head { gap: 8px; }
+            .privacy { font-size: 9px; }
+            .upload-row { align-items: stretch; flex-direction: column; }
+            .upload-box { min-height: 44px; }
+            .form-row { align-items: stretch; flex-direction: column; }
+            .form-row .field { flex-direction: row; align-items: center; justify-content: space-between; }
+            .form-row .button { width: 100%; }
+            .timer-layout { grid-template-columns: 1fr; }
+            .timer-panel { min-height: 320px; }
+            .timer-help { min-height: 150px; }
+            .event-form { grid-template-columns: 1fr 130px; }
+            .event-form .button { grid-column: 1 / -1; }
+            .result-top { flex-direction: column; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; }
+        }
+    </style>
+</head>
+<body>
+    <div class="shell">
+        <header class="topbar">
+            <div class="brand">
+                <div class="brand-mark" aria-hidden="true"><img src="./favicon.svg" alt=""></div>
+                <div>Mochi Study<small>YOUR LITTLE STUDY SPACE</small></div>
+            </div>
+            <div class="top-right">
+                <span class="date-label" id="today-label"></span>
+                <span class="ai-status" id="ai-status" role="status"><span class="status-dot"></span><span id="ai-status-text">Đang kiểm tra AI...</span></span>
+                <div class="avatar" aria-label="Bạn học">🐻</div>
+            </div>
+        </header>
+
+        <div class="layout">
+            <nav class="sidebar" aria-label="Các công cụ học tập">
+                <div class="nav-label">Không gian học</div>
+                <button class="nav-button active" type="button" data-page="summary"><span class="nav-icon">✧</span>Tóm tắt</button>
+                <button class="nav-button" type="button" data-page="quiz"><span class="nav-icon">☷</span>Tạo quiz</button>
+                <button class="nav-button" type="button" data-page="timer"><span class="nav-icon">◷</span>Tập trung</button>
+                <button class="nav-button" type="button" data-page="events"><span class="nav-icon">✿</span>Ngày quan trọng</button>
+                <div class="sidebar-tip"><strong>Một chút nhắc nhở ☁</strong>Học theo nhịp của bạn. Nghỉ ngơi cũng là một phần của tiến bộ.</div>
+            </nav>
+
+            <main>
+                <section class="welcome" aria-labelledby="welcome-title">
+                    <p class="eyebrow">Chậm một chút, hiểu sâu hơn 🌱</p>
+                    <h1 id="welcome-title">Chào bạn, hôm nay học gì nhỉ?</h1>
+                    <p>Một góc nhỏ để bạn tập trung và biến kiến thức thành điều dễ nhớ.</p>
+                </section>
+
+                <section class="page active" id="page-summary" aria-labelledby="summary-heading">
+                    <div class="card content-card">
+                        <div class="section-head">
+                            <div class="head-group"><div class="icon-box">✧</div><div><h2 id="summary-heading">Trợ lý tóm tắt</h2><p class="subheading">Biến tài liệu học thuật thành những ý chính dễ nhớ</p></div></div>
+                            <span class="privacy">🔒 Tài liệu đọc trên máy bạn</span>
+                        </div>
+                        <div class="upload-row">
+                            <div class="upload-box" id="upload-box">
+                                <span class="file-icon">＋</span>
+                                <span id="file-description"><strong>Thêm tài liệu</strong>PDF, Word, ảnh, TXT hoặc kéo thả vào đây</span>
+                                <label class="upload-button" for="file-input">Chọn tệp</label>
+                            </div>
+                            <input class="file-input" id="file-input" type="file" accept=".pdf,.docx,.txt,.md,.png,.jpg,.jpeg,.webp,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,image/*">
+                        </div>
+                        <p class="privacy-note">Tệp được trích xuất ngay trong trình duyệt. Nội dung văn bản sẽ được gửi đến AI bạn cấu hình khi yêu cầu tóm tắt hoặc tạo quiz.</p>
+                        <label class="field-label" for="source-text"><span>Nội dung học thuật</span><span class="field-hint" id="text-count">0 ký tự</span></label>
+                        <textarea class="text-area" id="source-text" placeholder="Dán nội dung bài giảng, nghiên cứu hoặc ghi chú vào đây...&#10;&#10;Bạn cũng có thể tải PDF, Word hoặc ảnh lên để trích xuất văn bản tự động."></textarea>
+                        <div class="form-row">
+                            <label class="field" for="summary-length">Độ dài tóm tắt
+                                <select class="select" id="summary-length"><option value="short">Ngắn gọn</option><option value="medium" selected>Vừa đủ</option><option value="long">Chi tiết</option></select>
+                            </label>
+                            <button class="button button-primary" id="summarize-button" type="button">✦ Tóm tắt bằng AI</button>
+                        </div>
+                        <div class="notice" id="summary-notice" role="status"></div>
+                        <div class="result-card" id="summary-result" aria-live="polite">
+                            <div class="result-top"><h3 class="result-title">✧ Bản tóm tắt</h3><div class="result-actions"><button class="small-button" id="copy-summary" type="button">Sao chép</button></div></div>
+                            <div class="result-body" id="summary-output"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="page" id="page-quiz" aria-labelledby="quiz-heading">
+                    <div class="card content-card">
+                        <div class="section-head">
+                            <div class="head-group"><div class="icon-box lilac">☷</div><div><h2 id="quiz-heading">Quiz ôn tập thông minh</h2><p class="subheading">Tạo câu hỏi từ lý thuyết hoặc biến đề trắc nghiệm thành bài luyện tương tác</p></div></div>
+                        </div>
+                        <div class="mode-row" role="radiogroup" aria-label="Chọn loại tài liệu">
+                            <label class="mode-option"><input type="radio" name="quiz-mode" value="theory" checked><span>📚 Từ tài liệu lý thuyết</span></label>
+                            <label class="mode-option"><input type="radio" name="quiz-mode" value="existing_quiz"><span>☑ Từ đề trắc nghiệm có sẵn</span></label>
+                        </div>
+                        <div class="upload-row">
+                            <div class="upload-box" id="quiz-upload-box">
+                                <span class="file-icon">＋</span>
+                                <span id="quiz-file-description"><strong>Thêm tài liệu</strong>PDF, Word, ảnh, TXT hoặc kéo thả vào đây</span>
+                                <label class="upload-button" for="quiz-file-input">Chọn tệp</label>
+                            </div>
+                            <input class="file-input" id="quiz-file-input" type="file" accept=".pdf,.docx,.txt,.md,.png,.jpg,.jpeg,.webp,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,image/*">
+                        </div>
+                        <p class="privacy-note">Tệp được đọc trên trình duyệt; nội dung sẽ được gửi đến AI bạn cấu hình để tạo câu hỏi.</p>
+                        <label class="field-label" for="quiz-source"><span id="quiz-source-label">Nội dung lý thuyết</span><span class="field-hint" id="quiz-text-count">0 ký tự</span></label>
+                        <textarea class="text-area" id="quiz-source" placeholder="Dán nội dung bài học để tạo câu hỏi ôn tập..."></textarea>
+                        <div class="form-row">
+                            <label class="field" for="question-count">Số câu hỏi
+                                <select class="select" id="question-count"><option value="5">5 câu</option><option value="10" selected>10 câu</option><option value="15">15 câu</option></select>
+                            </label>
+                            <button class="button button-primary" id="generate-quiz" type="button">✦ Tạo quiz bằng AI</button>
+                        </div>
+                        <div class="notice" id="quiz-notice" role="status"></div>
+                        <div class="result-card" id="quiz-result" aria-live="polite">
+                            <div class="result-top"><h3 class="result-title" id="quiz-title">✧ Bài quiz của bạn</h3><div class="result-actions"><button class="small-button" id="restart-quiz" type="button">Làm lại quiz</button></div></div>
+                            <div class="quiz-summary"><span id="quiz-progress">Chọn đáp án đúng nhất nhé!</span><span class="quiz-score" id="quiz-score"></span></div>
+                            <div id="quiz-questions"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="page" id="page-timer" aria-labelledby="timer-heading">
+                    <div class="section-head">
+                        <div class="head-group"><div class="icon-box peach">◷</div><div><h2 id="timer-heading">Giờ tập trung</h2><p class="subheading">Tập trung một chút, tiến bộ mỗi ngày</p></div></div>
+                    </div>
+                    <div class="timer-layout">
+                        <div class="card timer-panel">
+                            <div class="timer-ring" id="timer-ring" role="timer" aria-label="Thời gian còn lại"><div class="timer-inner"><span class="timer-display" id="timer-display">25:00</span><span class="timer-caption" id="timer-caption">Sẵn sàng bắt đầu ✿</span></div></div>
+                            <div class="timer-controls"><button class="button button-primary" id="timer-start" type="button">▶ &nbsp; Bắt đầu</button><button class="round-button" id="timer-reset" type="button" aria-label="Đặt lại đồng hồ" title="Đặt lại">↺</button></div>
+                            <div class="presets" aria-label="Chọn thời lượng học">
+                                <button class="preset active" data-minutes="25" type="button">Tập trung · 25p</button>
+                                <button class="preset" data-minutes="5" type="button">Nghỉ ngắn · 5p</button>
+                                <button class="preset" data-minutes="15" type="button">Nghỉ dài · 15p</button>
+                                <label class="field" for="custom-minutes"><input class="input" id="custom-minutes" type="number" min="1" max="180" inputmode="numeric" placeholder="Tùy chỉnh (phút)" aria-label="Số phút tùy chỉnh"></label>
+                            </div>
+                        </div>
+                        <aside class="card timer-help">
+                            <div class="icon-box peach" style="margin-bottom:14px">☕</div>
+                            <h3>Nhịp học Pomodoro</h3>
+                            <p>Chọn một khoảng thời gian, tập trung vào một việc duy nhất. Khi hết giờ, hãy đứng dậy và nghỉ ngơi một chút nhé.</p>
+                            <div class="notice success">Mẹo nhỏ: Sau 4 phiên tập trung, bạn có thể nghỉ dài để nạp lại năng lượng 🌿</div>
+                        </aside>
+                    </div>
+                </section>
+
+                <section class="page" id="page-events" aria-labelledby="events-heading">
+                    <div class="card content-card">
+                        <div class="section-head">
+                            <div class="head-group"><div class="icon-box peach">✿</div><div><h2 id="events-heading">Ngày quan trọng</h2><p class="subheading">Đếm ngược đến ngày thi, hạn nộp bài và những cột mốc của bạn</p></div></div>
+                        </div>
+                        <form class="event-form" id="event-form">
+                            <label class="field" for="event-name">Tên sự kiện<input class="input" id="event-name" maxlength="80" placeholder="Ví dụ: Thi cuối kỳ môn Sinh" required></label>
+                            <label class="field" for="event-date">Ngày diễn ra<input class="input" id="event-date" type="date" required></label>
+                            <button class="button button-primary" type="submit">＋ Thêm ngày</button>
+                        </form>
+                        <div class="notice" id="event-notice" role="status"></div>
+                        <div class="event-list" id="event-list" aria-live="polite"></div>
+                    </div>
+                </section>
+            </main>
+        </div>
+        <footer class="footer"><span>♥</span> Cứ tập trung vào một việc nhỏ thôi, bạn đang làm tốt lắm.</footer>
+    </div>
+
+    <script>
+        (function () {
+            "use strict";
+
+            var $ = function (selector, root) { return (root || document).querySelector(selector); };
+            var $$ = function (selector, root) { return Array.prototype.slice.call((root || document).querySelectorAll(selector)); };
+            var loaderCache = {};
+
+            $("#today-label").textContent = new Intl.DateTimeFormat("vi-VN", { weekday: "long", day: "numeric", month: "long" }).format(new Date());
+
+            $$(".nav-button").forEach(function (button) {
+                button.addEventListener("click", function () {
+                    $$(".nav-button").forEach(function (item) { item.classList.toggle("active", item === button); });
+                    $$(".page").forEach(function (page) { page.classList.toggle("active", page.id === "page-" + button.dataset.page); });
+                });
+            });
+
+            function setNotice(element, message, kind) {
+                element.textContent = message;
+                element.className = "notice visible" + (kind ? " " + kind : "");
+            }
+            function clearNotice(element) {
+                element.textContent = "";
+                element.className = "notice";
+            }
+            function loadScript(name, src) {
+                if (loaderCache[name]) return loaderCache[name];
+                loaderCache[name] = new Promise(function (resolve, reject) {
+                    var script = document.createElement("script");
+                    script.src = src;
+                    script.async = true;
+                    script.onload = resolve;
+                    script.onerror = function () {
+                        delete loaderCache[name];
+                        reject(new Error("Không tải được thư viện đọc tệp. Hãy kiểm tra kết nối mạng rồi thử lại."));
+                    };
+                    document.head.appendChild(script);
+                });
+                return loaderCache[name];
+            }
+
+            async function extractFile(file) {
+                var name = file.name.toLocaleLowerCase("vi");
+                var ext = name.split(".").pop();
+                if (["txt", "md"].indexOf(ext) !== -1) return await file.text();
+                if (ext === "docx") {
+                    await loadScript("mammoth", "https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js");
+                    var doc = await window.mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() });
+                    return doc.value.trim();
+                }
+                if (ext === "pdf") {
+                    await loadScript("pdfjs", "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js");
+                    window.pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+                    var pdf = await window.pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
+                    var pages = [];
+                    for (var pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
+                        var page = await pdf.getPage(pageNumber);
+                        var content = await page.getTextContent();
+                        pages.push(content.items.map(function (item) { return item.str || ""; }).join(" "));
+                    }
+                    return pages.join("\n\n").trim();
+                }
+                if (["png", "jpg", "jpeg", "webp"].indexOf(ext) !== -1 || file.type.indexOf("image/") === 0) {
+                    await loadScript("tesseract", "https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js");
+                    var worker = await window.Tesseract.createWorker("vie+eng");
+                    try {
+                        var ocr = await worker.recognize(file);
+                        return ocr.data.text.trim();
+                    } finally {
+                        await worker.terminate();
+                    }
+                }
+                throw new Error("Định dạng tệp chưa được hỗ trợ. Hãy chọn PDF, DOCX, TXT, MD hoặc ảnh PNG/JPG/WEBP.");
+            }
+
+            function setupUploader(fileInput, dropBox, description, textArea, counter, notice) {
+                function load(file) {
+                    if (!file) return;
+                    clearNotice(notice);
+                    description.textContent = "";
+                    var strong = document.createElement("strong");
+                    strong.textContent = "Đang đọc: " + file.name;
+                    description.appendChild(strong);
+                    var fileLimit = 25 * 1024 * 1024;
+                    if (file.size > fileLimit) {
+                        setNotice(notice, "Tệp vượt quá giới hạn 25 MB. Hãy chọn tệp nhỏ hơn.", "error");
+                        description.textContent = "PDF, Word, ảnh, TXT hoặc kéo thả vào đây";
+                        fileInput.value = "";
+                        return;
+                    }
+                    extractFile(file).then(function (text) {
+                        if (!text) throw new Error("Không tìm thấy văn bản trong tệp. Nếu đây là PDF scan, hãy tải trang dưới dạng ảnh để dùng OCR.");
+                        textArea.value = text.slice(0, 100000);
+                        counter.textContent = textArea.value.length.toLocaleString("vi-VN") + " ký tự";
+                        description.textContent = "";
+                        var loaded = document.createElement("strong");
+                        loaded.textContent = file.name;
+                        description.appendChild(loaded);
+                        setNotice(notice, "Đã trích xuất nội dung từ " + file.name + ".", "success");
+                        textArea.focus();
+                    }).catch(function (error) {
+                        description.textContent = "PDF, Word, ảnh, TXT hoặc kéo thả vào đây";
+                        setNotice(notice, error.message || "Không thể đọc tệp này.", "error");
+                    }).finally(function () { fileInput.value = ""; });
+                }
+                fileInput.addEventListener("change", function () { load(fileInput.files[0]); });
+                ["dragenter", "dragover"].forEach(function (eventName) {
+                    dropBox.addEventListener(eventName, function (event) {
+                        event.preventDefault();
+                        dropBox.classList.add("dragging");
+                    });
+                });
+                ["dragleave", "drop"].forEach(function (eventName) {
+                    dropBox.addEventListener(eventName, function (event) {
+                        event.preventDefault();
+                        dropBox.classList.remove("dragging");
+                    });
+                });
+                dropBox.addEventListener("drop", function (event) { load(event.dataTransfer.files[0]); });
+            }
+
+            var summaryText = $("#source-text");
+            var summaryCount = $("#text-count");
+            var summaryNotice = $("#summary-notice");
+            var quizText = $("#quiz-source");
+            var quizCount = $("#quiz-text-count");
+            var quizNotice = $("#quiz-notice");
+            summaryText.addEventListener("input", function () { summaryCount.textContent = summaryText.value.length.toLocaleString("vi-VN") + " ký tự"; });
+            quizText.addEventListener("input", function () { quizCount.textContent = quizText.value.length.toLocaleString("vi-VN") + " ký tự"; });
+            setupUploader($("#file-input"), $("#upload-box"), $("#file-description"), summaryText, summaryCount, summaryNotice);
+            setupUploader($("#quiz-file-input"), $("#quiz-upload-box"), $("#quiz-file-description"), quizText, quizCount, quizNotice);
+
+            $$('input[name="quiz-mode"]').forEach(function (radio) {
+                radio.addEventListener("change", function () {
+                    var fromQuiz = radio.value === "existing_quiz" && radio.checked;
+                    $("#quiz-source-label").textContent = fromQuiz ? "Nội dung đề trắc nghiệm" : "Nội dung lý thuyết";
+                    quizText.placeholder = fromQuiz ? "Dán đề trắc nghiệm và các lựa chọn (nếu có đáp án, AI sẽ dùng để kiểm tra)..."
+                        : "Dán nội dung bài học để tạo câu hỏi ôn tập...";
+                });
+            });
+
+            function requestAI(task, content, options) {
+                if (window.location.protocol === "file:") {
+                    return Promise.reject(new Error(
+                        "Bạn đang mở trang bằng file:// nên trình duyệt chặn kết nối API. " +
+                        "Chạy `python server.py`, rồi mở http://127.0.0.1:8000 (xem README.md)."
+                    ));
+                }
+                return fetch("/api/ai", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ task: task, content: content, options: options || {} })
+                }).then(async function (response) {
+                    var data;
+                    var body = await response.text();
+                    try {
+                        data = JSON.parse(body);
+                    } catch (error) {
+                        var contentType = response.headers.get("content-type") || "";
+                        if (response.status === 405) {
+                            throw new Error(
+                                "Máy chủ hiện tại không hỗ trợ API AI (HTTP 405), có thể bạn đang dùng Live Server. " +
+                                "Dừng máy chủ đó, chạy `python server.py`, rồi mở http://127.0.0.1:8000."
+                            );
+                        }
+                        if (response.status === 404 || contentType.indexOf("text/html") !== -1) {
+                            throw new Error(
+                                "Địa chỉ này không trả về API AI. Hãy chạy `python server.py` trong thư mục dự án " +
+                                "và mở http://127.0.0.1:8000 thay vì dùng Live Server."
+                            );
+                        }
+                        throw new Error(
+                            "Backend trả về HTTP " + response.status + " nhưng không phải JSON. " +
+                            "Kiểm tra server.py và mở ứng dụng tại http://127.0.0.1:8000."
+                        );
+                    }
+                    if (!data || typeof data !== "object" || Array.isArray(data)) {
+                        throw new Error("Backend trả về JSON sai định dạng. Hãy khởi động lại server.py.");
+                    }
+                    if (!response.ok) throw new Error(data.error || "Yêu cầu AI thất bại (" + response.status + ").");
+                    if (typeof data.result !== "string" || !data.result.trim()) throw new Error("AI không trả về nội dung. Hãy thử lại.");
+                    return data.result.trim();
+                }).catch(function (error) {
+                    if (error instanceof TypeError) {
+                        throw new Error("Không kết nối được AI. Hãy khởi chạy server theo hướng dẫn trong README.md và kiểm tra cấu hình API.");
+                    }
+                    throw error;
+                });
+            }
+
+            function parseAIJSON(raw) {
+                var cleaned = raw.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
+                try { return JSON.parse(cleaned); }
+                catch (error) { throw new Error("AI trả về nội dung sai định dạng. Hãy thử tạo lại."); }
+            }
+            function renderSummary(data) {
+                if (!data || typeof data.summary !== "string" || !data.summary.trim()) throw new Error("AI không trả về phần tóm tắt hợp lệ.");
+                var output = $("#summary-output");
+                output.textContent = "";
+                if (data.title) {
+                    var title = document.createElement("p");
+                    var strong = document.createElement("strong");
+                    strong.textContent = data.title;
+                    title.appendChild(strong);
+                    output.appendChild(title);
+                }
+                var summary = document.createElement("p");
+                summary.textContent = data.summary;
+                output.appendChild(summary);
+                if (Array.isArray(data.key_points) && data.key_points.length) {
+                    var heading = document.createElement("p");
+                    var label = document.createElement("strong");
+                    label.textContent = "Ý cần ghi nhớ";
+                    heading.appendChild(label);
+                    output.appendChild(heading);
+                    var list = document.createElement("ul");
+                    data.key_points.forEach(function (point) {
+                        var item = document.createElement("li");
+                        item.textContent = String(point);
+                        list.appendChild(item);
+                    });
+                    output.appendChild(list);
+                }
+                $("#summary-result").classList.add("visible");
+            }
+            $("#summarize-button").addEventListener("click", function () {
+                var text = summaryText.value.trim();
+                clearNotice(summaryNotice);
+                if (text.length < 40) {
+                    setNotice(summaryNotice, "Hãy nhập hoặc tải lên một đoạn tài liệu dài hơn để AI có thể tóm tắt nhé.", "error");
+                    summaryText.focus();
+                    return;
+                }
+                var button = $("#summarize-button");
+                button.disabled = true;
+                button.textContent = "Đang đọc tài liệu...";
+                requestAI("summary", text, { length: $("#summary-length").value }).then(function (response) {
+                    renderSummary(parseAIJSON(response));
+                    setNotice(summaryNotice, "Đã hoàn thành bản tóm tắt.", "success");
+                }).catch(function (error) {
+                    setNotice(summaryNotice, error.message, "error");
+                }).finally(function () {
+                    button.disabled = false;
+                    button.textContent = "✦ Tóm tắt bằng AI";
+                });
+            });
+            $("#copy-summary").addEventListener("click", function () {
+                navigator.clipboard.writeText($("#summary-output").innerText).then(function () {
+                    $("#copy-summary").textContent = "Đã sao chép ✓";
+                    window.setTimeout(function () { $("#copy-summary").textContent = "Sao chép"; }, 1600);
+                }).catch(function () { setNotice(summaryNotice, "Không thể truy cập clipboard trên trình duyệt này.", "error"); });
+            });
+
+            var currentQuestions = [];
+            var userAnswers = [];
+            function renderQuiz(data) {
+                if (!data || !Array.isArray(data.questions) || !data.questions.length) throw new Error("AI không trả về danh sách câu hỏi hợp lệ.");
+                data.questions.forEach(function (question, index) {
+                    if (!question || typeof question.question !== "string" || !Array.isArray(question.options) ||
+                        question.options.length < 2 || !Number.isInteger(question.answer) ||
+                        question.answer < 0 || question.answer >= question.options.length) {
+                        throw new Error("Câu hỏi số " + (index + 1) + " không có đủ nội dung, lựa chọn hoặc đáp án hợp lệ.");
+                    }
+                });
+                currentQuestions = data.questions;
+                userAnswers = new Array(currentQuestions.length).fill(null);
+                $("#quiz-title").textContent = "✧ " + (data.title || "Bài quiz của bạn");
+                $("#quiz-progress").textContent = "0 / " + currentQuestions.length + " câu đã trả lời";
+                $("#quiz-score").textContent = "";
+                var container = $("#quiz-questions");
+                container.textContent = "";
+                currentQuestions.forEach(function (question, questionIndex) {
+                    var card = document.createElement("article");
+                    card.className = "question-card";
+                    var title = document.createElement("h4");
+                    title.className = "question-title";
+                    title.textContent = (questionIndex + 1) + ". " + question.question;
+                    card.appendChild(title);
+                    var feedback = document.createElement("div");
+                    feedback.className = "answer-feedback";
+                    feedback.setAttribute("aria-live", "polite");
+                    question.options.forEach(function (option, optionIndex) {
+                        var answer = document.createElement("button");
+                        answer.type = "button";
+                        answer.className = "answer-option";
+                        var letter = document.createElement("span");
+                        letter.className = "answer-letter";
+                        letter.textContent = String.fromCharCode(65 + optionIndex);
+                        var text = document.createElement("span");
+                        text.textContent = String(option);
+                        answer.appendChild(letter);
+                        answer.appendChild(text);
+                        answer.addEventListener("click", function () {
+                            if (userAnswers[questionIndex] !== null) return;
+                            userAnswers[questionIndex] = optionIndex;
+                            var buttons = $$(".answer-option", card);
+                            buttons.forEach(function (item, itemIndex) {
+                                item.disabled = true;
+                                if (itemIndex === question.answer) item.classList.add("correct");
+                                else if (itemIndex === optionIndex) item.classList.add("incorrect");
+                            });
+                            var correct = optionIndex === question.answer;
+                            feedback.textContent = (correct ? "Chính xác! " : "Chưa đúng rồi. Đáp án đúng là " +
+                                String.fromCharCode(65 + question.answer) + ". ") + (question.explanation || "");
+                            feedback.classList.add("visible");
+                            updateQuizScore();
+                        });
+                        card.appendChild(answer);
+                    });
+                    card.appendChild(feedback);
+                    container.appendChild(card);
+                });
+                $("#quiz-result").classList.add("visible");
+            }
+            function updateQuizScore() {
+                var answered = userAnswers.filter(function (answer) { return answer !== null; }).length;
+                $("#quiz-progress").textContent = answered + " / " + currentQuestions.length + " câu đã trả lời";
+                if (answered === currentQuestions.length) {
+                    var correct = userAnswers.filter(function (answer, index) { return answer === currentQuestions[index].answer; }).length;
+                    $("#quiz-score").textContent = "Điểm: " + correct + " / " + currentQuestions.length + " 🎉";
+                }
+            }
+            $("#generate-quiz").addEventListener("click", function () {
+                var text = quizText.value.trim();
+                var mode = $('input[name="quiz-mode"]:checked').value;
+                clearNotice(quizNotice);
+                if (text.length < 40) {
+                    setNotice(quizNotice, "Hãy nhập hoặc tải lên tài liệu dài hơn trước khi tạo quiz nhé.", "error");
+                    quizText.focus();
+                    return;
+                }
+                var button = $("#generate-quiz");
+                button.disabled = true;
+                button.textContent = "Đang soạn câu hỏi...";
+                requestAI("quiz", text, { mode: mode, count: Number($("#question-count").value) }).then(function (response) {
+                    renderQuiz(parseAIJSON(response));
+                    setNotice(quizNotice, "Quiz đã sẵn sàng. Chọn đáp án để xem giải thích nhé!", "success");
+                }).catch(function (error) {
+                    setNotice(quizNotice, error.message, "error");
+                }).finally(function () {
+                    button.disabled = false;
+                    button.textContent = "✦ Tạo quiz bằng AI";
+                });
+            });
+            $("#restart-quiz").addEventListener("click", function () {
+                if (currentQuestions.length) renderQuiz({ title: $("#quiz-title").textContent.replace(/^✧\s*/, ""), questions: currentQuestions });
+            });
+
+            var timerDisplay = $("#timer-display");
+            var timerCaption = $("#timer-caption");
+            var timerRing = $("#timer-ring");
+            var timerStart = $("#timer-start");
+            var initialSeconds = 25 * 60;
+            var remainingSeconds = initialSeconds;
+            var deadline = null;
+            var intervalId = null;
+            var finished = false;
+            function renderTimer() {
+                var minutes = Math.floor(remainingSeconds / 60);
+                var seconds = remainingSeconds % 60;
+                timerDisplay.textContent = String(minutes).padStart(2, "0") + ":" + String(seconds).padStart(2, "0");
+                timerRing.style.setProperty("--progress", (initialSeconds ? remainingSeconds / initialSeconds * 100 : 0) + "%");
+                timerRing.setAttribute("aria-label", "Còn " + minutes + " phút " + seconds + " giây");
+            }
+            function stopTimer() {
+                if (intervalId !== null) window.clearInterval(intervalId);
+                intervalId = null;
+                deadline = null;
+            }
+            function chooseDuration(minutes) {
+                stopTimer();
+                initialSeconds = minutes * 60;
+                remainingSeconds = initialSeconds;
+                finished = false;
+                timerStart.textContent = "▶  Bắt đầu";
+                timerCaption.textContent = "Sẵn sàng bắt đầu ✿";
+                renderTimer();
+            }
+            timerStart.addEventListener("click", function () {
+                if (intervalId !== null) {
+                    remainingSeconds = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+                    stopTimer();
+                    timerStart.textContent = "▶  Tiếp tục";
+                    timerCaption.textContent = "Tạm nghỉ một chút nhé";
+                    renderTimer();
+                    return;
+                }
+                if (finished || remainingSeconds <= 0) chooseDuration(initialSeconds / 60);
+                finished = false;
+                deadline = Date.now() + remainingSeconds * 1000;
+                timerStart.textContent = "Ⅱ  Tạm dừng";
+                timerCaption.textContent = "Bạn đang làm rất tốt ✿";
+                intervalId = window.setInterval(function () {
+                    remainingSeconds = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+                    renderTimer();
+                    if (remainingSeconds <= 0) {
+                        stopTimer();
+                        finished = true;
+                        timerStart.textContent = "▶  Bắt đầu lại";
+                        timerCaption.textContent = "Tuyệt vời! Bạn làm được rồi 🎉";
+                    }
+                }, 250);
+            });
+            $("#timer-reset").addEventListener("click", function () { chooseDuration(initialSeconds / 60); });
+            $$(".preset").forEach(function (button) {
+                button.addEventListener("click", function () {
+                    $$(".preset").forEach(function (item) { item.classList.remove("active"); });
+                    button.classList.add("active");
+                    $("#custom-minutes").value = "";
+                    chooseDuration(Number(button.dataset.minutes));
+                });
+            });
+            $("#custom-minutes").addEventListener("change", function (event) {
+                var minutes = Number(event.target.value);
+                if (!Number.isInteger(minutes) || minutes < 1 || minutes > 180) {
+                    event.target.value = "";
+                    return;
+                }
+                $$(".preset").forEach(function (item) { item.classList.remove("active"); });
+                chooseDuration(minutes);
+            });
+            renderTimer();
+
+            var eventStorageKey = "mochi-study-events-v1";
+            var events = [];
+            try {
+                var storedEvents = JSON.parse(localStorage.getItem(eventStorageKey) || "[]");
+                if (Array.isArray(storedEvents)) events = storedEvents.filter(function (item) {
+                    return item && typeof item.id === "string" && typeof item.name === "string" &&
+                        typeof item.date === "string" && !Number.isNaN(new Date(item.date + "T00:00:00").getTime());
+                });
+            } catch (error) {
+                events = [];
+            }
+            function saveEvents() {
+                try {
+                    localStorage.setItem(eventStorageKey, JSON.stringify(events));
+                    return true;
+                } catch (error) {
+                    setNotice($("#event-notice"), "Không thể lưu ngày quan trọng trên trình duyệt này.", "error");
+                    return false;
+                }
+            }
+            function renderEvents() {
+                var list = $("#event-list");
+                list.textContent = "";
+                if (!events.length) {
+                    var empty = document.createElement("div");
+                    empty.className = "empty-state";
+                    empty.textContent = "Chưa có sự kiện nào. Thêm ngày thi hoặc cột mốc đầu tiên của bạn nhé ✿";
+                    list.appendChild(empty);
+                    return;
+                }
+                var today = new Date();
+                today.setHours(0, 0, 0, 0);
+                events.sort(function (a, b) { return a.date.localeCompare(b.date); });
+                events.forEach(function (event) {
+                    var target = new Date(event.date + "T00:00:00");
+                    var days = Math.round((target.getTime() - today.getTime()) / 86400000);
+                    var item = document.createElement("article");
+                    item.className = "event-item";
+                    var info = document.createElement("div");
+                    info.className = "event-info";
+                    var name = document.createElement("p");
+                    name.className = "event-name";
+                    name.textContent = event.name;
+                    var date = document.createElement("p");
+                    date.className = "event-date";
+                    date.textContent = new Intl.DateTimeFormat("vi-VN", { weekday: "long", day: "numeric", month: "long", year: "numeric" }).format(target);
+                    info.appendChild(name);
+                    info.appendChild(date);
+                    var count = document.createElement("div");
+                    count.className = "event-count";
+                    count.textContent = days > 0 ? "Còn " + days + " ngày" : (days === 0 ? "Hôm nay!" : "Đã qua " + Math.abs(days) + " ngày");
+                    var small = document.createElement("small");
+                    small.textContent = days > 0 ? "cùng cố gắng nhé" : (days === 0 ? "chúc bạn tự tin!" : "cột mốc đã qua");
+                    count.appendChild(small);
+                    var remove = document.createElement("button");
+                    remove.type = "button";
+                    remove.className = "delete-event";
+                    remove.setAttribute("aria-label", "Xóa sự kiện " + event.name);
+                    remove.title = "Xóa sự kiện";
+                    remove.textContent = "×";
+                    remove.addEventListener("click", function () {
+                        events = events.filter(function (entry) { return entry.id !== event.id; });
+                        saveEvents();
+                        renderEvents();
+                    });
+                    item.appendChild(info);
+                    item.appendChild(count);
+                    item.appendChild(remove);
+                    list.appendChild(item);
+                });
+            }
+            $("#event-form").addEventListener("submit", function (event) {
+                event.preventDefault();
+                clearNotice($("#event-notice"));
+                var name = $("#event-name").value.trim();
+                var date = $("#event-date").value;
+                if (!name || !date) return;
+                events.push({ id: String(Date.now()) + "-" + Math.random().toString(36).slice(2), name: name, date: date });
+                saveEvents();
+                renderEvents();
+                $("#event-name").value = "";
+                $("#event-date").value = "";
+                setNotice($("#event-notice"), "Đã thêm ngày quan trọng của bạn.", "success");
+            });
+            var minimumDate = new Date();
+            $("#event-date").min = minimumDate.getFullYear() + "-" +
+                String(minimumDate.getMonth() + 1).padStart(2, "0") + "-" +
+                String(minimumDate.getDate()).padStart(2, "0");
+            renderEvents();
+
+            if (window.location.protocol === "file:") {
+                $("#ai-status-text").textContent = "Cần chạy server";
+            } else {
+                fetch("/api/status").then(function (response) {
+                    if (!response.ok) throw new Error(String(response.status));
+                    return response.json();
+                }).then(function (data) {
+                    $("#ai-status").classList.toggle("online", Boolean(data.configured));
+                    $("#ai-status-text").textContent = data.configured ? "AI đã kết nối" : "Chưa cấu hình AI";
+                }).catch(function (error) {
+                    $("#ai-status-text").textContent = error.message === "405" || error.message === "404"
+                        ? "Sai máy chủ" : "AI chưa kết nối";
+                });
+            }
+        }());
+    </script>
+</body>
+</html>
